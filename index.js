@@ -67,10 +67,10 @@ Webhook.on('messages', (event_type, sender_info, webhook_event) => {
 // Webhook.emit('messages', event_type, sender_info, webhook_event);
 // Webhook.emit('message_deliveries', event_type, sender_info, webhook_event);
 
-function sendGreetingMessage(recipientId){
-    text = "greeting message";
-    sendMessage(recipient, text);
-}
+//function sendGreetingMessage(recipientId){
+//    text = "greeting message";
+//    sendMessage(recipient, text);
+//}
 
 function sendMessage(recipientId, text) {
     let recipient = {
@@ -86,3 +86,18 @@ function sendMessage(recipientId, text) {
         console.error(e);
     });
 }
+
+let fields = {
+  'greeting': [
+    {
+      'locale':'default',
+      'text':'Welcome to Recyclebot. I will tell you whether your trash is recyclable or not. First question, does it contain anything?',
+    }
+  ]
+};
+
+Client.setMessengerProfile(fields)
+  .then(res => {
+    console.log(res); // {"result": "success"}
+  });
+
