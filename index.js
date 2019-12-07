@@ -67,10 +67,11 @@ function handleMessageEvent(userId, webhookEvent){
     sendMessage(userId, message + "recieved");
 }
 
-function sendGreetingMessage(recipientId){
-    text = "greeting message";
-    sendMessage(recipient, text);
-}
+//function sendGreetingMessage(recipientId){
+//    text = "greeting message";
+//    sendMessage(recipient, text);
+//}
+
 
 function sendMessage(recipientId, text) {
     let recipient = {
@@ -97,3 +98,16 @@ function getUserInfo(psid){
 }
 
 
+let fields = {
+  'greeting': [
+    {
+      'locale':'default',
+      'text':'Welcome to Recyclebot. I will tell you whether your trash is recyclable or not. First question, does it contain anything?',
+    }
+  ]
+};
+
+Client.setMessengerProfile(fields)
+  .then(res => {
+    console.log(res); // {"result": "success"}
+  });
