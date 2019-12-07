@@ -9,10 +9,9 @@ console.log("Recycle-Bot starting...");
 // console.log(process.env.PAGE_ACCESS_TOKEN);
 // console.log(process.env.APP_ID);
 
-
 let webhook_config = {
     'port': process.env.PORT,//(optional - defualts to process.env.PORT)
-    // endpoint (optional - defaults to webhook)
+    'endpoint': "webhook",
     'app_secret': process.env.APP_SECRET, //(optional - required for validating signed webview requests using Webhook.validateSignedRequest())
     'verify_token': process.env.VERIFY_TOKEN
 }
@@ -48,24 +47,25 @@ const Client = new Messenger.Client(client_options);
 
 Webhook.on('messaging_postbacks', (event_type, sender_info, webhook_event) => {
     // TODO: handle when postback button, get started button or persistent menu is tapped
-    Webhook.emit('messaging_postbacks', event_type, sender_info, webhook_event);
-    console.log(webhook_event);
-    console.log("messaging_postbacks");
-    sendMessage(sender_info.id, "testing");
+    // Webhook.emit('messaging_postbacks', event_type, sender_info, webhook_event);
+    handleMessageEvent(sender_info.value, webhook_event);
 });
 
 Webhook.on('messages', (event_type, sender_info, webhook_event) => {
     // TODO: handle when messages sent to page
-    //Webhook.emit('messages', event_type, sender_info, webhook_event);
-    console.log("sender info: ");
-    console.log(sender_info);
-    sendMessage(sender_info.value, "testing");
-  });
+    // Webhook.emit('messages', event_type, sender_info, webhook_event);
+    handleMessageEvent(sender_info.value, webhook_event);
+});
 
 // usefull for testing
 // Webhook.emit('messaging_postbacks', event_type, sender_info, webhook_event);
 // Webhook.emit('messages', event_type, sender_info, webhook_event);
 // Webhook.emit('message_deliveries', event_type, sender_info, webhook_event);
+
+function handleMessageEvent(userId, webhookEvent){
+    let message = webhookEvent.message.text;
+    sendMessage(userId, message + "recieved");
+}
 
 function sendGreetingMessage(recipientId){
     text = "greeting message";
@@ -74,15 +74,26 @@ function sendGreetingMessage(recipientId){
 
 function sendMessage(recipientId, text) {
     let recipient = {
-        'id': recipientId //parse to string?
+        'id': recipientId
     };
     // send the text message
     Client.sendText(recipient, text)
     .then(res => {
         // log the api response
-        console.log(res);
+        console.log(text + " sent");
     })
     .catch(e => {
         console.error(e);
     });
 }
+
+function getUserInfo(psid){
+    let fields = ['id', 'first_name', 'last_name', 'profile_pic']
+
+    Client.getUserProfile(psid, fields)
+      .then(res => {
+        return res;
+      });
+}
+
+
