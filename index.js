@@ -48,7 +48,9 @@ const Client = new Messenger.Client(client_options);
 Webhook.on('messaging_postbacks', (event_type, sender_info, webhook_event) => {
     // TODO: handle when postback button, get started button or persistent menu is tapped
     // Webhook.emit('messaging_postbacks', event_type, sender_info, webhook_event);
-    handleMessageEvent(sender_info.value, webhook_event);
+    let userId = sender_info.value;
+    //sendYesNoQuestion(userId, "Is your container dirty?");
+    handleMessageEvent(userId, webhook_event);
 });
 
 Webhook.on('messages', (event_type, sender_info, webhook_event) => {
@@ -64,14 +66,9 @@ Webhook.on('messages', (event_type, sender_info, webhook_event) => {
 
 function handleMessageEvent(userId, webhookEvent){
     let message = webhookEvent.message.text;
-    sendMessage(userId, message + "recieved");
+    //sendMessage(userId, message + "recieved");
+    sendYesNoQuestion(userId, "Is your container dirty?");
 }
-
-//function sendGreetingMessage(recipientId){
-//    text = "greeting message";
-//    sendMessage(recipient, text);
-//}
-
 
 function sendMessage(recipientId, text) {
     let recipient = {
@@ -94,7 +91,26 @@ function getUserInfo(psid){
     Client.getUserProfile(psid, fields)
       .then(res => {
         return res;
+      }).catch( e => {
+        console.log(Error);
       });
+}
+
+function sendYesNoQuestion(recipientId, text) {
+    let recipient = {'id': recipientId};
+    let quick_replies = [{ 'content_type': 'text', "title" : "Yes", 'payload':'quick_reply_payload' }, { 'content_type': 'text', "title" : "No", 'payload':'quick_reply_payload' }];
+
+    Client.sendQuickReplies(recipient, quick_replies, text)
+    .then(res => {
+        console.log(res);
+        console.log("yes or no Q sent")
+        // {
+        //   "recipient_id": "1008372609250235", 
+        //   "message_id": "mid.1456970487936:c34767dfe57ee6e339"
+        // }
+    }).catch( e => {
+        console.log(e);
+    });
 }
 
 
@@ -102,12 +118,16 @@ let fields = {
   'greeting': [
     {
       'locale':'default',
-      'text':'Welcome to Recyclebot. I will tell you whether your trash is recyclable or not. First question, does it contain anything?',
+      'text':'Welcome to Recyclebot. I will tell you whether your trash is recyclable or not. First question, is your trash stained, contaminated or contains food?',
     }
   ]
 };
 
 Client.setMessengerProfile(fields)
   .then(res => {
-    console.log(res); // {"result": "success"}
+    if (res.result == "success"){
+        console.log("setMessengerProfile successful");
+    } else {
+        console.log("setMessengerProfile unsuccessful");
+    }
   });
