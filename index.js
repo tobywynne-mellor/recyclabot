@@ -6,7 +6,7 @@ let webhook_config = {
     // port (optional - defualts to process.env.PORT)
     // endpoint (optional - deffaults to webhook)
     // app_secret (optional - required for validating signed webview requests using Webhook.validateSignedRequest())
-    'verify_token':'MY_VERIFY_TOKEN'
+    'verify_token':process.env.
 }
 
 const Webhook = new Messenger.Webhook(webhook_config);
