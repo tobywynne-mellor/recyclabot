@@ -44,14 +44,21 @@ const Client = new Messenger.Client(client_options);
    - webhook_event -> the complete event from the 'messaging' array in the POST request
 */
 
-
+// when user first opens
 Webhook.on('messaging_postbacks', (event_type, sender_info, webhook_event) => {
-    // TODO: handle when postback button, get started button or persistent menu is tapped
-    // Webhook.emit('messaging_postbacks', event_type, sender_info, webhook_event);
+    // do something 
     let userId = sender_info.value;
-    //sendYesNoQuestion(userId, "Is your container dirty?");
-    handleMessageEvent(userId, webhook_event);
+    console.log(webhook_event);
+    beginConversation(userId);
 });
+
+// Webhook.on('messaging_postbacks', (event_type, sender_info, webhook_event) => {
+//     // TODO: handle when postback button, get started button or persistent menu is tapped
+//     // Webhook.emit('messaging_postbacks', event_type, sender_info, webhook_event);
+//     let userId = sender_info.value;
+//     //sendYesNoQuestion(userId, "Is your container dirty?");
+//     handleMessageEvent(userId, webhook_event);
+// });
 
 Webhook.on('messages', (event_type, sender_info, webhook_event) => {
     // TODO: handle when messages sent to page
@@ -64,10 +71,14 @@ Webhook.on('messages', (event_type, sender_info, webhook_event) => {
 // Webhook.emit('messages', event_type, sender_info, webhook_event);
 // Webhook.emit('message_deliveries', event_type, sender_info, webhook_event);
 
+function beginConversation(userId){
+    sendMessage(userId, "Hi! ");
+    sendYesNoQuestion(userId, "Is your container dirty?");
+}
+
 function handleMessageEvent(userId, webhookEvent){
     let message = webhookEvent.message.text;
-    //sendMessage(userId, message + "recieved");
-    sendYesNoQuestion(userId, "Is your container dirty?");
+    sendMessage(userId, message + " received");
 }
 
 function sendMessage(recipientId, text) {
@@ -92,13 +103,13 @@ function getUserInfo(psid){
       .then(res => {
         return res;
       }).catch( e => {
-        console.log(Error);
+        console.log(e);
       });
 }
 
 function sendYesNoQuestion(recipientId, text) {
     let recipient = {'id': recipientId};
-    let quick_replies = [{ 'content_type': 'text', "title" : "Yes", 'payload':'quick_reply_payload' }, { 'content_type': 'text', "title" : "No", 'payload':'quick_reply_payload' }];
+    let quick_replies = [{ 'content_type': 'text', "title" : "Yes its dirty", 'payload':'quick_reply_payload' }, { 'content_type': 'text', "title" : "No its not dirty" , 'payload':'quick_reply_payload' }];
 
     Client.sendQuickReplies(recipient, quick_replies, text)
     .then(res => {
@@ -120,7 +131,10 @@ let fields = {
       'locale':'default',
       'text':'Welcome to Recyclebot. I will tell you whether your trash is recyclable or not. First question, is your trash stained, contaminated or contains food?',
     }
-  ]
+  ],
+  'get_started' : {
+      'payload' : 'callback_payload'
+  }
 };
 
 Client.setMessengerProfile(fields)
