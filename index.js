@@ -316,7 +316,7 @@ let fields = {
   'greeting': [
     {
       'locale':'default',
-      'text':'Welcome to Recyclebot. I will tell you whether your trash is recyclable or not. First question, is your trash stained, contaminated or contains food?',
+      'text': 'Informing Londoners on how to sort their waste sustainably',
     }
   ],
   'get_started' : {
@@ -332,3 +332,12 @@ Client.setMessengerProfile(fields)
         console.log("setMessengerProfile unsuccessful");
     }
   });
+
+//Check if attachment is image
+ if (event.message && ) {
+    let attachment = event.message.attachments[0] //Get attachment
+    if (attachment.type === "image") { //check whether it is an image
+        console.log(attachment.payload.url)
+    } 
+  }
+
