@@ -116,9 +116,8 @@ Webhook.on('messages', (event_type, sender_info, webhook_event) => {
 
 
 function handleMessageEvent(userId, webhookEvent, type){
-    console.log("handleMessageEvent");
-    console.log(JSON.stringify(webhookEvent));
-    console.log("type: " + type);
+    console.log("question number: " + questionNumber);
+
     if (type == "messages") {
         if (webhookEvent.message) {
             if (webhookEvent.message.text){
@@ -158,15 +157,27 @@ function handleMessageEvent(userId, webhookEvent, type){
 function handleImage(userId, url) {
     //console.log("handleImage for user id: " + userId);
     sendMessage(userId, "I'm looking at your image...");
-    prediction = getPrediction(url);
-    console.log("prediction" + prediction);
-    if (prediction == "plastic") {
-        //sendMessage(userId, "OOh plastic hmmm...");
-    }
+    getPrediction(url, function(prediction) {
+        console.log("prediction: " + prediction);
+        if (prediction == "plastic") {
+            sendMessage(userId, "Depending on where you live, recycling of plastics varies.");
+            sendMessage(userId, "Learn more about recycling at your home here: https://londonrecycles.co.uk/")
+        } else if (prediction == "cardboard" || prediction == "paper" || prediction == "glass") {
+            sendMessage(userId, "Ah " + prediction +"! As it's clean, you may recycle it.");
+            sendMessage(userId, "Learn more about recycling at your home here: https://londonrecycles.co.uk/")
+        } else if (prediction == "metal") {
+            sendMessage(userId, "Depending on where you live, recycling of metals varies.");
+            sendMessage(userId, "Learn more about recycling at your home here: https://londonrecycles.co.uk/local-recycling")
+        }
+        //questionNumber = 3;
+        //handleResponseMessage(userId, "");
+        //sendMessage(userId, "Learn more about recycling at your home here: https://londonrecycles.co.uk/")
+    });
+    
 }
 
 
-function getPrediction(url) {
+function getPrediction(url, callback) {
     var options = {
         uri: 'http://d3e6d0bd.ngrok.io/send_image',
         method: 'POST',
@@ -181,39 +192,52 @@ function getPrediction(url) {
     request(options, function (error, response, body) {
         if (!error && response.statusCode == 200) {
             console.log("request response: " + body); 
-            return body
+            callback(body);
         }
     });
 }
 
 
 function handleResponseMessage(userId, message) {
+    let nextQuestionNumber;
+    
     switch(questionNumber) {
         case 1:
             if (message.toLowerCase().includes("yes")) {
                 console.log("message includes yes")
-                questionNumber = 2;
-                askQuestion(userId, questionNumber)
+                nextQuestionNumber = 2;
+                askQuestion(userId, nextQuestionNumber)
             } else {
                 console.log("message does not include yes")
-                questionNumber = 3;
+                nextQuestionNumber = 3;
+                askQuestion(userId, nextQuestionNumber);
             }
             break;
         case 2:
             if (message.toLowerCase().includes("yes")) {
                 console.log("message includes yes")
-                questionNumber = 3;
-                askQuestion(userId, questionNumber)
+                nextQuestionNumber = 3;
+                askQuestion(userId, nextQuestionNumber)
             } else {
                 console.log("message does not include yes")
                 sendNotRecyclable(userId);
             }
             break;
         case 3:
-            questionNumber = 4;
-            askQuestion(userId, questionNumber);
+            nextQuestionNumber = 4;
+            askQuestion(userId, nextQuestionNumber);
+        case 4:
+            nextQuestionNumber = 5;
+            askQuestion(userId, nextQuestionNumber);
+        case 5:
+                nextQuestionNumber = 1;
+            sendMessage(userId, "https://londonrecycles.co.uk/node/51/?postcode=" + message);
+        default:
+            // questionNumber = 1;
+            // askQuestion(userId, questionNumber);
     }
-    askQuestion(userId, questionNumber);
+    questionNumber = nextQuestionNumber;
+    // askQuestion(userId, questionNumber);
 }
 
 function sendNotRecyclable(userId) {
@@ -235,8 +259,6 @@ function askQuestion(userId, questionNumber){
             askQuestion4(userId);
             break;
         default:
-            // removeUserConversation(userId);
-            beginConversation(userId);
             break;
     }
 }
@@ -247,7 +269,6 @@ function beginConversation(userId){
         question = "First, please tell me if there is any food or liquid left in/on your waste?"
         sendYesNoQuestion(userId, question);
     }, 1000);
-    
 }
 
 function askQuestion2(userId) {
@@ -256,16 +277,18 @@ function askQuestion2(userId) {
 }
 
 function askQuestion3(userId) {
-    message = "Please clean it. If you don't clean it, it will not be recyclable"
-    sendMessage(message)
+    message = "Please clean it. If you don't clean it, it will not be recyclable";
+    sendMessage(userId, message);
     setTimeout(function(){
-        question = "Please take a picture of your waste, so I know how you should sort it."
+        question = "Please take a picture of your waste, so I know how you should sort it.";
         sendMessage(userId, question);
     }, 1000);
 }
 
 function askQuestion4(userId) {
-    
+    setTimeout(function(){
+        sendMessage(userId, "If you would like to learn more, send us your post code.");
+    }, 1000);
 }
 
 function sendMessage(recipientId, text) {
@@ -281,17 +304,6 @@ function sendMessage(recipientId, text) {
     .catch(e => {
         console.error(e);
     });
-}
-
-function getUserInfo(psid){
-    let fields = ['id', 'first_name', 'last_name', 'profile_pic']
-
-    Client.getUserProfile(psid, fields)
-      .then(res => {
-        return res;
-      }).catch( e => {
-        console.log(e);
-      });
 }
 
 function sendYesNoQuestion(recipientId, text) {
@@ -316,7 +328,7 @@ let fields = {
   'greeting': [
     {
       'locale':'default',
-      'text': 'Informing Londoners on how to sort their waste sustainably',
+      'text': 'Informing Londoners on how to sort their waste sustainably.',
     }
   ],
   'get_started' : {
@@ -332,12 +344,3 @@ Client.setMessengerProfile(fields)
         console.log("setMessengerProfile unsuccessful");
     }
   });
-
-//Check if attachment is image
- if (event.message && ) {
-    let attachment = event.message.attachments[0] //Get attachment
-    if (attachment.type === "image") { //check whether it is an image
-        console.log(attachment.payload.url)
-    } 
-  }
-
