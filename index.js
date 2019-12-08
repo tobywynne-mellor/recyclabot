@@ -148,7 +148,7 @@ let fields = {
   'greeting': [
     {
       'locale':'default',
-      'text':'Welcome to Recyclebot. I will tell you whether your trash is recyclable or not. First question, is your trash stained, contaminated or contains food?',
+      'text': 'Informing Londoners on how to sort their waste sustainably',
     }
   ],
   'get_started' : {
