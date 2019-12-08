@@ -1,4 +1,6 @@
 const Messenger = require('messenger-node');
+var request = require('request');
+
 require('dotenv').config();
 
 console.log("Recycle-Bot starting...");
@@ -26,23 +28,42 @@ let client_options = {
 
 const Client = new Messenger.Client(client_options);
 
-let userConversations = {}
+let questionNumber = 1;
 
-function addNewUserConversation(userId){
-    userConversations[userId] = [];
-}
 
-function addQuestionToConversation(userId, question){
-    userConversations[userId]["question"].append(question);
-}
+// let userConversations = {}
 
-function addAnswerToConversation(userId, answer){
-    userConversations[userId]["answers"].append(answer);
-}
+// function addNewUserConversation(userId){
+//     userConversations[userId] = {"questions":[], "answers":[]};
+// }
 
-function removeUserConversation(userId){
-    delete userConversations[userId];
-}
+// function addQuestionToConversation(userId, question){
+//     userConversations[userId]["questions"].push(question);
+// }
+
+// function addAnswerToConversation(userId, answer){
+//     userConversations[userId]["answers"].push(answer);
+// }
+
+// function removeUserConversation(userId){
+//     delete userConversations[userId];
+// }
+
+// function getPrevQuestion(userId){
+//     return userConversations[userId]["questions"][userConversations[userId]["questions"]].length()-1
+// }
+
+// function getPrevAnswer(userId){
+//     return userConversations[userId]["answers"][userConversations[userId]["answers"]].length()-1
+// }
+
+// function getQuestionNumber(userId, question){
+//     return userConversations[userId]["questions"].indexOf(question)+1
+// }
+
+// function getAnswerNumber(userId, answer){
+//     return userConversations[userId]["answers"].indexOf(answer)+1
+// }
 
 /*
   Webhook Events that we're interested in
@@ -65,9 +86,9 @@ function removeUserConversation(userId){
 // when user first opens
 Webhook.on('messaging_postbacks', (event_type, sender_info, webhook_event) => {
     // do something 
-    print();
+    console.log("postback");
     let userId = sender_info.value;
-    if(userConversations[userId])
+    //addNewUserConversation(userId);
     beginConversation(userId);
 });
 
@@ -80,9 +101,11 @@ Webhook.on('messaging_postbacks', (event_type, sender_info, webhook_event) => {
 // });
 
 Webhook.on('messages', (event_type, sender_info, webhook_event) => {
+    //console.log("message event");
     // TODO: handle when messages sent to page
     // Webhook.emit('messages', event_type, sender_info, webhook_event);
-    handleMessageEvent(sender_info.value, webhook_event);
+    //console.log("got a message");
+    handleMessageEvent(sender_info.value, webhook_event, event_type.type);
 });
 
 // usefull for testing
@@ -90,14 +113,159 @@ Webhook.on('messages', (event_type, sender_info, webhook_event) => {
 // Webhook.emit('messages', event_type, sender_info, webhook_event);
 // Webhook.emit('message_deliveries', event_type, sender_info, webhook_event);
 
-function beginConversation(userId){
-    sendMessage(userId, "Hi! ");
-    sendYesNoQuestion(userId, "Is your container dirty?");
+
+
+function handleMessageEvent(userId, webhookEvent, type){
+    console.log("handleMessageEvent");
+    console.log(JSON.stringify(webhookEvent));
+    console.log("type: " + type);
+    if (type == "messages") {
+        if (webhookEvent.message) {
+            if (webhookEvent.message.text){
+                let userMessage = webhookEvent.message.text;
+                console.log(userMessage + " recieved");
+                handleResponseMessage(userId, userMessage);
+            }
+            if (webhookEvent.message.attachments != undefined) {
+                let attachment = webhookEvent.message.attachments[0];
+                if (attachment.type == "image"){
+                    console.log(attachment.payload.url);
+                    //TODO: Send image to model
+                    if (attachment.payload) {
+                        if (attachment.payload.url) {
+                            handleImage(userId, attachment.payload.url);
+                        } else {
+                            console.log("url not found");
+                        }
+                    } else {
+                        console.log("payload not found");
+                    }
+                }
+            }
+        } else {
+            console.log("webhook.message is not true");
+        }
+    } else if (type == "messaging_postbacks") {
+        console.log("messageing_post backs - doing nothing");
+    } else {
+        console.log("unknown event type");
+    }
+
+
+    //sendMessage(userId, message + " received");
 }
 
-function handleMessageEvent(userId, webhookEvent){
-    let message = webhookEvent.message.text;
-    sendMessage(userId, message + " received");
+function handleImage(userId, url) {
+    //console.log("handleImage for user id: " + userId);
+    sendMessage(userId, "I'm looking at your image...");
+    prediction = getPrediction(url);
+    console.log("prediction" + prediction);
+    if (prediction == "plastic") {
+        //sendMessage(userId, "OOh plastic hmmm...");
+    }
+}
+
+
+function getPrediction(url) {
+    var options = {
+        uri: 'http://d3e6d0bd.ngrok.io/send_image',
+        method: 'POST',
+        json: {  
+            "url": url,
+        },
+        headers : {  
+            "content-type": "application/json",
+        }
+    };
+      
+    request(options, function (error, response, body) {
+        if (!error && response.statusCode == 200) {
+            console.log("request response: " + body); 
+            return body
+        }
+    });
+}
+
+
+function handleResponseMessage(userId, message) {
+    switch(questionNumber) {
+        case 1:
+            if (message.toLowerCase().includes("yes")) {
+                console.log("message includes yes")
+                questionNumber = 2;
+                askQuestion(userId, questionNumber)
+            } else {
+                console.log("message does not include yes")
+                questionNumber = 3;
+            }
+            break;
+        case 2:
+            if (message.toLowerCase().includes("yes")) {
+                console.log("message includes yes")
+                questionNumber = 3;
+                askQuestion(userId, questionNumber)
+            } else {
+                console.log("message does not include yes")
+                sendNotRecyclable(userId);
+            }
+            break;
+        case 3:
+            questionNumber = 4;
+            askQuestion(userId, questionNumber);
+    }
+    askQuestion(userId, questionNumber);
+}
+
+function sendNotRecyclable(userId) {
+    sendMessage(userId, "Unfortunately, you can't recycle that.");
+}
+
+function askQuestion(userId, questionNumber){
+    switch(questionNumber) {
+        case 1:
+            beginConversation(userId);
+            break;
+        case 2:
+            askQuestion2(userId);
+            break;
+        case 3:
+            askQuestion3(userId);
+            break;
+        case 4:
+            askQuestion4(userId);
+            break;
+        default:
+            // removeUserConversation(userId);
+            beginConversation(userId);
+            break;
+    }
+}
+
+function beginConversation(userId){
+    sendMessage(userId, "Hi, Let me help you with waste sorting!");
+    setTimeout(function(){
+        question = "First, please tell me if there is any food or liquid left in/on your waste?"
+        sendYesNoQuestion(userId, question);
+    }, 1000);
+    
+}
+
+function askQuestion2(userId) {
+    question = "Are you able to clean it?"
+    sendYesNoQuestion(userId, question);
+}
+
+function askQuestion3(userId) {
+    message = "Please clean it. If you don't clean it, it will not be recyclable"
+    sendMessage(message)
+    setTimeout(function(){
+        question = "Please take a picture of your waste, so I know how you should sort it."
+        sendMessage(userId, question);
+    }, 1000);
+}
+
+function askQuestion4(userId) {
+    
 }
 
 function sendMessage(recipientId, text) {
@@ -127,12 +295,12 @@ function getUserInfo(psid){
 }
 
 function sendYesNoQuestion(recipientId, text) {
+    // addQuestionToConversation(recipientId, text);
     let recipient = {'id': recipientId};
-    let quick_replies = [{ 'content_type': 'text', "title" : "Yes its dirty", 'payload':'quick_reply_payload' }, { 'content_type': 'text', "title" : "No its not dirty" , 'payload':'quick_reply_payload' }];
+    let quick_replies = [{ 'content_type': 'text', "title" : "Yes", 'payload':'quick_reply_payload' }, { 'content_type': 'text', "title" : "No" , 'payload':'quick_reply_payload' }];
 
     Client.sendQuickReplies(recipient, quick_replies, text)
     .then(res => {
-        console.log(res);
         console.log("yes or no Q sent")
         // {
         //   "recipient_id": "1008372609250235", 

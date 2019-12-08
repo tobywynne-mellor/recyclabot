@@ -24,6 +24,7 @@
   "homepage": "https://github.com/tobywynne-mellor/recycle-bot#readme",
   "dependencies": {
     "dotenv": "^8.2.0",
-    "messenger-node": "^0.3.2"
+    "messenger-node": "^0.3.2",
+    "request": "^2.88.0"
   }
 }
