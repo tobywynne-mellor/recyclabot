@@ -26,6 +26,24 @@ let client_options = {
 
 const Client = new Messenger.Client(client_options);
 
+let userConversations = {}
+
+function addNewUserConversation(userId){
+    userConversations[userId] = [];
+}
+
+function addQuestionToConversation(userId, question){
+    userConversations[userId]["question"].append(question);
+}
+
+function addAnswerToConversation(userId, answer){
+    userConversations[userId]["answers"].append(answer);
+}
+
+function removeUserConversation(userId){
+    delete userConversations[userId];
+}
+
 /*
   Webhook Events that we're interested in
   - message_postbacks -> when postback button, get started button or persistent menu is tapped
@@ -47,8 +65,9 @@ const Client = new Messenger.Client(client_options);
 // when user first opens
 Webhook.on('messaging_postbacks', (event_type, sender_info, webhook_event) => {
     // do something 
+    print();
     let userId = sender_info.value;
-    console.log(webhook_event);
+    if(userConversations[userId])
     beginConversation(userId);
 });
 
