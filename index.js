@@ -164,3 +164,12 @@ Client.setMessengerProfile(fields)
         console.log("setMessengerProfile unsuccessful");
     }
   });
+
+//Check if attachment is image
+ if (event.message && ) {
+    let attachment = event.message.attachments[0] //Get attachment
+    if (attachment.type === "image") { //check whether it is an image
+        console.log(attachment.payload.url)
+    } 
+  }
+
