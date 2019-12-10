@@ -1,15 +1,8 @@
 const Messenger = require('messenger-node');
 var request = require('request');
-
 require('dotenv').config();
 
 console.log("Recycle-Bot starting...");
-
-// console.log(process.env.PORT);
-// console.log(process.env.APP_SECRET);
-// console.log(process.env.VERIFY_TOKEN);
-// console.log(process.env.PAGE_ACCESS_TOKEN);
-// console.log(process.env.APP_ID);
 
 let webhook_config = {
     'port': process.env.PORT,//(optional - defualts to process.env.PORT)
@@ -179,7 +172,7 @@ function handleImage(userId, url) {
 
 function getPrediction(url, callback) {
     var options = {
-        uri: 'http://d3e6d0bd.ngrok.io/send_image',
+        uri: 'https://7d37efd6.ngrok.io/send_image',
         method: 'POST',
         json: {  
             "url": url,
