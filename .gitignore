@@ -2,4 +2,7 @@
 node_modules
 __pycache__
 venv
+google model.zip
+app.yaml
+AI model/recylabot-0ac787903f8e.json
 themodel.pth

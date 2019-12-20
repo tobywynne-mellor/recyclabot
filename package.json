@@ -4,7 +4,7 @@
   "description": "Facebook Messenger Bot With ML to inform people about their recycling",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
+    "start": "node app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -23,8 +23,10 @@
   },
   "homepage": "https://github.com/tobywynne-mellor/recycle-bot#readme",
   "dependencies": {
+    "bootbot": "^1.0.16",
     "dotenv": "^8.2.0",
     "messenger-node": "^0.3.2",
-    "request": "^2.88.0"
+    "request": "^2.88.0",
+    "request-promise": "^4.2.5"
   }
 }
