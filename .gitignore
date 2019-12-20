@@ -5,4 +5,5 @@ venv
 google model.zip
 app.yaml
 AI model/recylabot-0ac787903f8e.json
+AI model/themodel.pth
 themodel.pth
