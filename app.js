@@ -34,8 +34,11 @@ bot.on('postback:get_started', (payload, chat) => {
                 convo.say("Did you know that 2/3 homes in the UK put things in the recycling which can't be recycled.", {
                     typing: true,
                     notificationType: 'SILENT_PUSH'
-                })
-                sendQuestionOne(convo);
+                }).then(() => {
+                    sendQuestionOne(convo);
+                }).catch((err) => {
+                    console.log(err);
+                });
             });
         });
     });
@@ -75,7 +78,7 @@ function sendQuestionOne(convo) {
         quickReplies: ['Yes', 'No']
     };
 
-    const answer = (payload, convo) => {
+    const answer = (payload, convo, data) => {
         console.log("answer:QuestionOne");
         const text = payload.message.text;
 
@@ -90,26 +93,11 @@ function sendQuestionOne(convo) {
         }
     };
 
-    const callbacks = [
-        {
-            event: 'quick_reply',
-            callback: (payload, convo) => {
-                answer(payload, convo)
-            }
-        },
-        {
-            event: 'attachment',
-            callback: () => { /* User replied with an attachment */
-                askAgain(convo, sendQuestionOne);
-            }
-        }
-    ];
-
     const options = {
         typing: true // Send a typing indicator before asking the question
     };
 
-    convo.ask(question, answer, callbacks, options);
+    convo.ask(question, answer, [], options);
 }
 
 function sendQuestionTwo(convo) {
@@ -119,7 +107,7 @@ function sendQuestionTwo(convo) {
         quickReplies: ['Yes', 'No']
     };
 
-    const answer = (payload, convo) => {
+    const answer = (payload, convo, data) => {
         console.log("answer:QuestionTwo");
         const text = payload.message.text;
         if (text.toLowerCase().includes("no")) {
@@ -134,33 +122,18 @@ function sendQuestionTwo(convo) {
         }
     };
 
-    const callbacks = [
-        {
-            event: 'message', // handles quick replies
-            callback: (payload, convo) => {
-                answer(payload, convo);
-            }
-        },
-        {
-            event: 'attachment',
-            callback: (payload, convo) => {
-                askAgain(convo, sendQuestionTwo);
-            }
-        }
-    ];
-
     const options = {
         typing: true // Send a typing indicator before asking the question
     };
 
-    convo.ask(question, answer, callbacks, options);
+    convo.ask(question, answer, [], options);
 }
 
 function sendQuestionThree(convo) {
     console.log("sendQuestionThree");
     const question = "Please send a photo of your waste.";
 
-    const answer = (payload, convo) => {
+    const answer = (payload, convo, data) => {
         console.log("answer:QuestionThree");
         try {
             if(payload.message) {
@@ -169,17 +142,17 @@ function sendQuestionThree(convo) {
                         if (payload.message.attachments[0].payload.url){
                             const url = payload.message.attachments[0].payload.url;
                             console.log("url: " + url);
-                            convo.say(String.fromCodePoint(128269) + " I'm taking a look at your waste. (can take upto 20 seconds)");
+                            convo.say("I'm taking a look at your waste " + String.fromCodePoint(128269));
+                            convo.sendTypingIndicator(20000);
                             getPrediction(url)
                                 .then((prediction) => {
-                                    console.log("prediction: " + prediction)
-                                    convo.say("I can see you have " + prediction + " waste.");
+                                    console.log("prediction: " + prediction);
+                                    convo.say("I can see your waste is " + prediction);
                                     handleMaterials(convo, prediction);
                                 })
                                 .catch((err) => {
                                     console.log(err)
                                 });
-                            convo.end();
                         } else {
                             console.log("payload has no url " + payload.message.attachments[0].payload)
                             askAgain(convo, sendQuestionThree);
@@ -202,29 +175,12 @@ function sendQuestionThree(convo) {
         }
     };
 
-    const callbacks = [
-        {
-            event: 'message',
-            callback: (payload, convo) => {
-                askAgain(convo, sendQuestionThree);
-            }
-        },
-        {
-            event: 'attachment',
-            callback: (payload, convo) => {
-                answer(payload, convo);
-            }
-        }
-    ];
-
     const options = {
         typing: true // Send a typing indicator before asking the question
     };
 
-    convo.ask(question, answer, callbacks, options);
+    convo.ask(question, answer, [], options);
 }
-
-// TODO: change to return promise
 
 const getPrediction = async (url) => {
     var options = {
@@ -245,25 +201,453 @@ const handleMaterials = (convo, material) => {
     //https://londonrecycles.co.uk/what-can-i-recycle
     switch(material) {
         case "plastic":
-            // which of these can you see on the plastic? -> send generic template
+            sendPlasticQuestion(convo);
             break;
         case "metal":
-            // is it any of <non recyclable metal>?
+            sendMetalQuestion(convo);
             break;
         case "paper":
-            // is it any of <non recyclable paper>?
+            sendPaperQuestion(convo);
             break;
         case "cardboard":
-            // is it any of <non recyclable cardboard>?
+            sendPaperQuestion(convo);
             break;
         case "glass":
-            // is it any of <non recyclable glass>?
+            sendGlassQuestion(convo);
             break;
         default:
             console.log("no switch case for " + material);
             break;
     }
-} 
+}
+
+// const sendPlasticQuestion = (convo) => {
+
+//     // not recyclable
+//     // Bottles which used to contain corrosive chemicals (like antifreeze)
+//     // Sweet packets or wrappers
+//     // Bubble Wrap
+//     // Laminated pouches - such as for cat food and coffee
+//     // Plastic toys
+//     // Blister packs for medicines (like paracetamol)
+//     // Toothpaste tubes
+//     // Expanded Polystyrene (used in packaging to protect your products)
+
+//     const question = (convo) => {
+//         // create button for each sign type
+//         const resin_button = createButton("postback", null, "Resin Code", "resin_code");
+//         //const resin_default_action = createDefaultAction("postback", null, null, "FULL");
+//         const resin_template = createGenericTemplate("Resin Code", "https://res.cloudinary.com/jerrick/image/upload/w_720/qw5afd3bdaxik9tyyyzt.png", null, null, [resin_button]);
+        
+//         const recycle_button = createButton("postback", null, "Recycle Now Icon", "recycle_now");
+//         //const recycle_default_action = createDefaultAction("postback", null, null, "FULL");
+//         const recycle_template = createGenericTemplate("Recycle Now", "https://pbs.twimg.com/profile_images/856425496745324544/tkZrmM3Z_400x400.jpg", null, null, [recycle_button]);
+    
+//         const none_button = createButton("postback", null, "Neither", "neither");
+//         //const recycle_default_action = createDefaultAction("postback", null, null, "FULL");
+//         const none_template = createGenericTemplate("Neither", null, null, null, [none_button]);
+    
+//         const elements = [resin_template, recycle_template, none_template];
+//         const options = {
+//             "typing" : true,
+//         }
+
+//         convo.say("Which of these symbols can you see on your waste?").then(() => {
+//             convo.sendGenericTemplate(elements, [options]);
+//         });
+//     }
+
+//     const answer = (payload, convo, data) => {
+//         askAgain(convo, handlePlastic);
+//     }
+
+//     const callbacks = [
+//         {
+//             event: 'postback:resin_code',
+//             callback: (payload, convo) => {
+//                 sendResinCodeQuestion(convo);
+//             }
+//         },{
+//             event: 'postback:recycle_now',
+//             callback: (payload, convo) => {
+//                 sendRecycleNowQuestion(convo);
+//             }
+//         },{
+//             event: 'postback:neither',
+//             callback: (payload, convo) => {
+//                 sendPostCodeQuestion(convo);
+//             }
+//         }
+//     ];
+
+//     const options = {
+//         "typing" : true
+//     }
+
+//     convo.ask(question, answer, callbacks, options);
+// }
+
+const createGenericTemplate = (title, imageUrl, subtitle, defaultAction, buttons) => {
+    
+    let template = {};
+
+    if (title) {
+        template["title"] = title;
+    }
+
+    if (imageUrl) {
+        template["image_url"] = imageUrl;
+    }
+
+    if (subtitle) {
+        template["subtitle"] = subtitle;
+    }
+
+    if (defaultAction) {
+        template["default_action"] = defaultAction;
+    }
+
+    if (buttons) {
+        template["buttons"] = buttons;
+    }
+
+    return template;
+}
+
+const createDefaultAction = (type, url, messenger_extensions, webviewHeight) => {
+    
+    let defaultAction = {};
+    
+    if (type) {
+        defaultAction["type"] = type;
+    }
+
+    if (url) {
+        defaultAction["url"] = url;
+    }
+
+    if (messenger_extensions) {
+        defaultAction["messenger_extensions"] = messenger_extensions;
+    }
+
+    if (webviewHeight) {
+        defaultAction["webview_height_ratio"] = webviewHeight;
+    }
+
+    return defaultAction;
+}
+
+const createButton = (type, url, title, payload) => {
+    
+    let button = {};
+    
+    if (type) {
+        button["type"] = type;
+    }
+
+    if (url) {
+        button["url"] = url;
+    }
+
+    if (title) {
+        button["title"] = title;
+    }
+
+    if (payload) {
+        button["payload"] = payload;
+    }
+
+    return button;
+}
+
+// const sendResinCodeQuestion = (convo) => {
+//     const question = (convo) => {
+//         console.log("sendResinQuestion");
+
+//         let elements = ["one", "two", "three", "four", "five", "six", "seven"].map((num)=>{
+//             const resin_button = createButton("postback", null, num, "resin_code_" + num);
+//             //const resin_default_action = createDefaultAction("postback", null, null, "FULL");
+//             return createGenericTemplate(num, "https://res.cloudinary.com/jerrick/image/upload/w_720/qw5afd3bdaxik9tyyyzt.png", null, null, [resin_button]);
+//         });
+
+//         const dont_know_button = createButton("postback", null, "I don't know", "dont_know");
+//         //const recycle_default_action = createDefaultAction("postback", null, null, "FULL");
+//         const none_template = createGenericTemplate("I don't know", null, null, null, [dont_know_button]);
+        
+//         elements.push(none_template);
+
+//         const options = {
+//             "typing" : true,
+//         }
+
+//         convo.say("Which resin code is it?").then(() => {
+//             convo.sendGenericTemplate(elements, [options]);
+//         });
+//     }
+
+//     const answer = (payload, convo, data) => {
+//         console.log("answer:sendResinQuestion");
+//         askAgain(convo, sendResinCodeQuestion);
+//     }
+
+//     const callbacks = [
+//         {
+//             event: 'postback:resin_code_one',
+//             callback: (payload, convo) => {
+//                 itIsRecyclable(convo);
+//             }
+//         },{
+//             event: 'postback:resin_code_two',
+//             callback: (payload, convo) => {
+//                 sendResinCodeQuestion(convo);
+//             }
+//         },{
+//             event: 'postback:resin_code_three',
+//             callback: (payload, convo) => {
+//                 sendResinCodeQuestion(convo);
+//             }
+//         },{
+//             event: 'postback:resin_code_four',
+//             callback: (payload, convo) => {
+//                 isItNotRecyclable(convo);
+//             }
+//         },{
+//             event: 'postback:resin_code_five',
+//             callback: (payload, convo) => {
+//                 sendResinCodeQuestion(convo);
+//             }
+//         },{
+//             event: 'postback:resin_code_six',
+//             callback: (payload, convo) => {
+//                 sendResinCodeQuestion(convo);
+//             }
+//         },{
+//             event: 'postback:resin_code_seven',
+//             callback: (payload, convo) => {
+//                 sendResinCodeQuestion(convo);
+//             }
+//         }
+//     ];
+
+//     const options = {
+//         "typing" : true
+//     }
+
+//     convo.ask(question, answer, callbacks, options);
+// }
+
+// const sendRecycleNowQuestion = (convo) => {
+
+// }
+
+const sendPlasticQuestion = (convo) => {
+    console.log("sendPlasticQuestion");
+    
+    const question = {
+        text: "Is your waste any of the following?\n-Bottles which used to contain corrosive chemicals (like antifreeze)\n-Sweet packets or wrappers\n-Bubble Wrap\n-Laminated pouches\n-Plastic Toys\n-Blister packs for medicines (like paracetamol)\n-Toothpaste tubes\n-Expanded Polystyrene",
+        quickReplies: ['Yes', 'No']
+    }
+
+    const answer = (payload, convo, data) => {
+        console.log("answer:sendPlasticQuestion");
+        const text = payload.message.text;
+
+        if (text.toLowerCase().includes("yes")) {
+            isItNotRecyclable(convo);
+        } else if (text.toLowerCase().includes("no")) {
+            itIsRecyclable(convo);
+        } else {
+            askAgain(convo, sendPlasticQuestion);
+        }
+    }
+
+    const callbacks = [];
+
+    const options = {
+        typing : true
+    }
+
+    convo.ask(question, answer, callbacks, options);
+}
+
+const sendMetalQuestion = (convo) => {
+
+    console.log("sendMetalQuestion");
+    
+    const question = {
+        text: "Is your waste any of the following?\n-Crisp packets\n-Sweet wrappers\n-Laminated foil",
+        quickReplies: ['Yes', 'No']
+    }
+
+    const answer = (payload, convo, data) => {
+        console.log("answer:sendMetalQuestion");
+        const text = payload.message.text;
+
+        if (text.toLowerCase().includes("yes")) {
+            isItNotRecyclable(convo);
+        } else if (text.toLowerCase().includes("no")) {
+            itIsRecyclable(convo);
+        } else {
+            askAgain(convo, sendMetalQuestion);
+        }
+    }
+
+    const callbacks = [];
+
+    const options = {
+        typing : true
+    }
+
+    convo.ask(question, answer, callbacks, options);
+}
+
+const sendPaperQuestion = (convo) => {
+
+    console.log("sendPaperQuestion");
+    
+    const question = {
+        text: "Is your waste any of the following?\n-Tissues, wet wipes and used paper towels\n-Nappies and sanitary pads\n-Cotton wool and make up pads\n-Sticky paper\n-Shiny or glittery wrapping paper",
+        quickReplies: ['Yes', 'No']
+    }
+
+    const answer = (payload, convo, data) => {
+        console.log("answer:sendPaperQuestion");
+        const text = payload.message.text;
+
+        if (text.toLowerCase().includes("yes")) {
+            isItNotRecyclable(convo);
+        } else if (text.toLowerCase().includes("no")) {
+            itIsRecyclable(convo);
+        } else {
+            askAgain(convo, sendPaperQuestion);
+        }
+    }
+
+    const callbacks = [];
+
+    const options = {
+        typing : true
+    }
+
+    convo.ask(question, answer, callbacks, options);
+}
+
+const sendGlassQuestion = (convo) => {
+
+    console.log("sendGlassQuestion");
+    
+    const question = {
+        text: "Is your waste any of the following?\n-Glass cookware\n-Drinking glasses\n-Vases\n-Microwave plates\n-Nail varnish bottles",
+        quickReplies: ['Yes', 'No']
+    }
+
+    const answer = (payload, convo, data) => {
+        console.log("answer:sendGlassQuestion");
+        const text = payload.message.text;
+
+        if (text.toLowerCase().includes("yes")) {
+            isItNotRecyclable(convo);
+        } else if (text.toLowerCase().includes("no")) {
+            itIsRecyclable(convo);
+        } else {
+            askAgain(convo, sendGlassQuestion);
+        }
+    }
+
+    const callbacks = [];
+
+    const options = {
+        typing : true
+    }
+
+    convo.ask(question, answer, callbacks, options);
+}
+
+const itIsRecyclable = (convo) => {
+    convo.say("Your waste is probably recyclable!").then(()=>{
+        askLearnMore(convo);
+    });
+}
+
+const isItNotRecyclable = (convo) => {
+    convo.say("Your waste is not recyclable unfortunately.").then(() => {
+        askLearnMore(convo);
+    });
+}
+
+const goodbye = (convo) => {
+    convo.say("Goodbye! Let me know if you have anymore waste!").then(()=>{
+        convo.end();
+    });
+}
+
+const askLearnMore = (convo) => {
+    const question = {
+        text: "Would you like to learn more?",
+        quickReplies: ['Yes', 'No']
+    };
+
+    const answer = (payload, convo, data) => {
+        const text = payload.message.text;
+
+        if (text.toLowerCase().includes("yes")) {
+            sendPostCodeQuestion(convo);
+        } else if (text.toLowerCase().includes("no")) {
+            goodbye(convo);
+        } else {
+            askAgain(convo, askLearnMore);
+        }
+    }
+
+    convo.ask(question, answer, [], {"typing":true});
+}
+
+const sendPostCodeQuestion = (convo) => {
+    //https://londonrecycles.co.uk/node/51/?postcode=
+    const question = "Please tell me your postcode (or say 'no').";
+
+    const answer = (payload, convo, data) => {
+        const text = payload.message.text;
+        const regex = "^((?:EC(?:[1234][AMNPRV]|[124]Y)|WC(?:[12][ABEHNR]|1[VX])|(?:E|SW)(?:[0-9]|1[0-9]|[12]0)|N(?:[1-9]|1[0-9]|2[0-2])|NW(?:[1-9]|1[01])|SE(?:[1-9]|1[0-9]|2[0-8])|W(?:[1-9]|1[0-4])|HA[0-9]|EN[1-8]|E1W) {0,}[0-9][ABD-HJLNP-UW-Z]{2})$";
+        const postcode = text.trim().match(regex);
+
+        if (postcode) {
+            sendInfo(convo, postcode[0]);
+        } else {
+            sendInfo(convo, null);
+        }
+    }
+
+    const callbacks = [];
+
+    const options = {
+        typing : true
+    }
+
+    convo.ask(question, answer, callbacks, options);
+}
+
+const sendInfo = (convo, postcode) => {
+    
+    let url = "https://londonrecycles.co.uk/node/51/";
+
+    if (postcode) {
+        url = "https://londonrecycles.co.uk/node/51/?postcode=" + postcode;
+    }
+    
+    const default_action = createDefaultAction("web_url", url, null, "FULL");
+    const template = createGenericTemplate("Learn More", "https://pbs.twimg.com/profile_images/1036546384537837569/ZILKbNZL_400x400.jpg", postcode, default_action, null);
+
+    const elements = [template];        
+
+    const options = {
+        typing: true
+    }
+
+    convo.sendGenericTemplate(elements, [ options ]).then(()=>{
+        goodbye(convo);
+    })
+}
 
 // const Messenger = require('messenger-node');
 // var request = require('request');

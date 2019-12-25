@@ -26,7 +26,7 @@ README.md
 User.js
 themodel.pth
 venv/
-.env
 node_modules
 __pycache__
 google model.zip
+AI\ model/
