@@ -630,13 +630,19 @@ const sendPostCodeQuestion = (convo) => {
 const sendInfo = (convo, postcode) => {
     
     let url = "https://londonrecycles.co.uk/node/51/";
+    let title = "What Can You Recycle"
 
     if (postcode) {
-        url = "https://londonrecycles.co.uk/node/51/?postcode=" + postcode;
+        url = url + "postcode=" + postcode;
+        title = title + " at " + postcode.toUpperCase();
+    } else {
+        title = title + "?";
     }
+
+    
     
     const default_action = createDefaultAction("web_url", url, null, "FULL");
-    const template = createGenericTemplate("Learn More", "https://pbs.twimg.com/profile_images/1036546384537837569/ZILKbNZL_400x400.jpg", postcode, default_action, null);
+    const template = createGenericTemplate(title, "https://pbs.twimg.com/profile_images/1036546384537837569/ZILKbNZL_400x400.jpg", postcode, default_action, null);
 
     const elements = [template];        
 
