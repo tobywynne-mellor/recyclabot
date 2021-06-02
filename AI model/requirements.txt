@@ -7,5 +7,5 @@ requests==2.22.0
 six==1.13.0
 #https://download.pytorch.org/whl/cpu/torch-1.0.1.post2-cp37-cp37m-linux_x86_64.whl
 torchvision==0.4.2
-urllib3==1.25.7
+urllib3==1.26.5
 google-cloud-storage==1.23.0
